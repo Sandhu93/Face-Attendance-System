@@ -311,73 +311,65 @@ class AutomatedEnrollmentApp:
         initialize_config()
         
         # Header
-        header_frame = tk.Frame(root, bg="#2c3e50", height=80)
+        header_frame = tk.Frame(root, bg="#2c3e50", height=60)
         header_frame.pack(fill="x")
         header_frame.pack_propagate(False)
         
         title_label = tk.Label(header_frame, text="🚀 Automated Employee Enrollment", 
-                              font=("Arial", 18, "bold"), bg="#2c3e50", fg="white")
-        title_label.pack(pady=25)
+                              font=("Arial", 16, "bold"), bg="#2c3e50", fg="white")
+        title_label.pack(pady=15)
         
         # Main content
-        content_frame = tk.Frame(root, bg="#f0f0f0", padx=40, pady=20)
+        content_frame = tk.Frame(root, bg="#f0f0f0", padx=40, pady=10)
         content_frame.pack(fill="both", expand=True)
         
-        # Info label
-        info_label = tk.Label(content_frame, 
-                             text="Complete enrollment in one step!\n" +
-                                  "System will automatically: Capture faces → Encode → Train model\n" +
-                                  "Press F11 for fullscreen • ESC to exit fullscreen",
-                             font=("Arial", 10), bg="#f0f0f0", fg="#555", justify="center")
-        info_label.pack(pady=(0, 20))
-        
         # Input fields
-        tk.Label(content_frame, text="Employee ID:", font=("Arial", 11), 
-                bg="#f0f0f0").pack(anchor="w")
-        self.entry_id = tk.Entry(content_frame, font=("Arial", 12), width=30)
-        self.entry_id.pack(pady=(5, 15), ipady=5)
+        tk.Label(content_frame, text="Employee ID:", font=("Arial", 10), 
+                bg="#f0f0f0").pack(anchor="w", pady=(5, 0))
+        self.entry_id = tk.Entry(content_frame, font=("Arial", 11), width=25)
+        self.entry_id.pack(pady=(3, 8), ipady=3)
         
-        tk.Label(content_frame, text="Employee Name:", font=("Arial", 11), 
-                bg="#f0f0f0").pack(anchor="w")
-        self.entry_name = tk.Entry(content_frame, font=("Arial", 12), width=30)
-        self.entry_name.pack(pady=(5, 20), ipady=5)
+        tk.Label(content_frame, text="Employee Name:", font=("Arial", 10), 
+                bg="#f0f0f0").pack(anchor="w", pady=(0, 0))
+        self.entry_name = tk.Entry(content_frame, font=("Arial", 11), width=25)
+        self.entry_name.pack(pady=(3, 10), ipady=3)
         
         # Progress section
         progress_frame = tk.Frame(content_frame, bg="#f0f0f0")
-        progress_frame.pack(fill="x", pady=10)
+        progress_frame.pack(fill="x", pady=5)
         
         self.status_label = tk.Label(progress_frame, text="Ready to enroll", 
-                                     font=("Arial", 10), bg="#f0f0f0", fg="#555")
-        self.status_label.pack(anchor="w", pady=(0, 5))
+                                     font=("Arial", 9), bg="#f0f0f0", fg="#555")
+        self.status_label.pack(anchor="w", pady=(0, 3))
         
-        self.progress_bar = ttk.Progressbar(progress_frame, length=600, mode="determinate")
-        self.progress_bar.pack(fill="x")
+        self.progress_bar = ttk.Progressbar(progress_frame, length=350, mode="determinate")
+        self.progress_bar.pack(pady=(0, 3))
         
         self.percentage_label = tk.Label(progress_frame, text="0%", 
-                                        font=("Arial", 10, "bold"), bg="#f0f0f0", fg="#2c3e50")
-        self.percentage_label.pack(pady=(5, 0))
+                                        font=("Arial", 9, "bold"), bg="#f0f0f0", fg="#2c3e50")
+        self.percentage_label.pack(pady=(2, 0))
         
         # Buttons
         button_frame = tk.Frame(content_frame, bg="#f0f0f0")
-        button_frame.pack(pady=20)
+        button_frame.pack(pady=10)
         
         self.start_button = tk.Button(button_frame, text="🚀 Start Enrollment", 
-                                      font=("Arial", 12, "bold"), bg="#27ae60", fg="white",
-                                      padx=20, pady=10, command=self.start_enrollment,
+                                      font=("Arial", 10, "bold"), bg="#27ae60", fg="white",
+                                      padx=15, pady=6, command=self.start_enrollment,
                                       cursor="hand2", relief="flat")
-        self.start_button.pack(side="left", padx=5)
+        self.start_button.pack(side="left", padx=4)
         
         self.stop_button = tk.Button(button_frame, text="⏹ Stop", 
-                                     font=("Arial", 12, "bold"), bg="#e74c3c", fg="white",
-                                     padx=20, pady=10, command=self.stop_enrollment,
+                                     font=("Arial", 10, "bold"), bg="#e74c3c", fg="white",
+                                     padx=15, pady=6, command=self.stop_enrollment,
                                      cursor="hand2", relief="flat", state="disabled")
-        self.stop_button.pack(side="left", padx=5)
+        self.stop_button.pack(side="left", padx=4)
         
         self.reset_button = tk.Button(button_frame, text="🔄 Reset", 
-                                      font=("Arial", 12, "bold"), bg="#95a5a6", fg="white",
-                                      padx=20, pady=10, command=self.reset_form,
+                                      font=("Arial", 10, "bold"), bg="#95a5a6", fg="white",
+                                      padx=15, pady=6, command=self.reset_form,
                                       cursor="hand2", relief="flat")
-        self.reset_button.pack(side="left", padx=5)
+        self.reset_button.pack(side="left", padx=4)
         
         # Style progress bar
         style = ttk.Style()
