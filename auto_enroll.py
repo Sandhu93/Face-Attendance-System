@@ -289,11 +289,23 @@ class AutomatedEnrollmentApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Automated Employee Enrollment System")
-        self.root.geometry("700x550")
+        
+        # Get screen dimensions and set window size to 90% of screen
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        window_width = int(screen_width * 0.9)
+        window_height = int(screen_height * 0.9)
+        
+        self.root.geometry(f"{window_width}x{window_height}")
         self.root.configure(bg="#f0f0f0")
         
         # Center window
-        self.center_window(700, 550)
+        self.center_window(window_width, window_height)
+        
+        # Fullscreen state
+        self.is_fullscreen = False
+        self.root.bind('<F11>', lambda e: self.toggle_fullscreen())
+        self.root.bind('<Escape>', lambda e: self.exit_fullscreen())
         
         # Initialize config
         initialize_config()
@@ -314,7 +326,8 @@ class AutomatedEnrollmentApp:
         # Info label
         info_label = tk.Label(content_frame, 
                              text="Complete enrollment in one step!\n" +
-                                  "System will automatically: Capture faces → Encode → Train model",
+                                  "System will automatically: Capture faces → Encode → Train model\n" +
+                                  "Press F11 for fullscreen • ESC to exit fullscreen",
                              font=("Arial", 10), bg="#f0f0f0", fg="#555", justify="center")
         info_label.pack(pady=(0, 20))
         
@@ -442,6 +455,14 @@ class AutomatedEnrollmentApp:
         self.status_label.config(text="Ready to enroll")
         self.start_button.config(state="normal")
         self.stop_button.config(state="disabled")
+    
+    def toggle_fullscreen(self):
+        self.is_fullscreen = not self.is_fullscreen
+        self.root.attributes('-fullscreen', self.is_fullscreen)
+    
+    def exit_fullscreen(self):
+        self.is_fullscreen = False
+        self.root.attributes('-fullscreen', False)
 
 if __name__ == "__main__":
     root = tk.Tk()
