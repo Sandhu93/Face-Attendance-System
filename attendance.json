@@ -1,5 +1,10 @@
 {
     "attendance": {
-       
+        "601": {
+            "name": "SandeepBKadam",
+            "check_in": "2025-11-26 11:13:22",
+            "check_out": "2025-11-26 11:15:45",
+            "working_hours": 0.04
+        }
     }
 }

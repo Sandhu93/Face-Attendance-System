@@ -30,19 +30,19 @@ def enroll_student():
 
     # Validate input fields
     if not student_id or not student_name:
-        messagebox.showerror("Input Error", "Please provide Person ID, Name.")
+        messagebox.showerror("Input Error", "Please provide Employee ID and Name.")
         enroll_button.config(state=tk.NORMAL)  # Re-enable the button if validation fails
         return
 
     # Validate student_id to be a valid numeric ID
     if not student_id.isdigit():
-        messagebox.showerror("Input Error", "Please provide a valid numeric Person ID.")
+        messagebox.showerror("Input Error", "Please provide a valid numeric Employee ID.")
         enroll_button.config(state=tk.NORMAL)  # Re-enable the button if validation fails
         return
 
     # Validate student_name to be a valid string (non-empty)
     if not student_name:
-        messagebox.showerror("Input Error", "Please provide a valid Person Name.")
+        messagebox.showerror("Input Error", "Please provide a valid Employee Name.")
         enroll_button.config(state=tk.NORMAL)  # Re-enable the button if validation fails
         return
 
@@ -67,7 +67,7 @@ def enroll_student():
     # Print the result
     if found_students:
         # print(f"Student(s) with ID {student_id}: {found_students}")
-        messagebox.showinfo("Already Enrolled", f"Person ID: '{found_students[0]}' is already enrolled.")
+        messagebox.showinfo("Already Enrolled", f"Employee ID: '{found_students[0]}' is already enrolled.")
         db.close()
         enroll_button.config(state=tk.NORMAL)  # Re-enable the button
         return
@@ -177,7 +177,7 @@ def draw_gradient(canvas, width, height):
 
 # Set up the Tkinter window
 root = tk.Tk()
-root.title("Face Enrollment")
+root.title("Employee Enrollment System")
 root.geometry("800x600")
 root.configure(bg="#eef2f3")
 
@@ -192,7 +192,7 @@ def on_resize(event):
 gradient_canvas.bind("<Configure>", on_resize)
 
 # Add a title label at the top
-title_label = tk.Label(root, text="Face Enrollment", font=("Helvetica", 22, "bold"), bg="#ff0000", fg="white")
+title_label = tk.Label(root, text="Employee Enrollment", font=("Helvetica", 22, "bold"), bg="#ff0000", fg="white")
 title_label.place(relx=0.5, rely=0.05, anchor="n", width=400)  # Adjusted for better control
 
 # Add input fields inside a small centered box
@@ -208,8 +208,8 @@ def create_labeled_entry(parent, label_text, default=""):
     entry.pack(fill="x", pady=5)
     return entry
 
-entry_id = create_labeled_entry(input_frame, "Person ID:")
-entry_name = create_labeled_entry(input_frame, "Person Name:")
+entry_id = create_labeled_entry(input_frame, "Employee ID:")
+entry_name = create_labeled_entry(input_frame, "Employee Name:")
 
 # Disable the config path field to keep it constant
 config_path = create_labeled_entry(input_frame, "Config Path:", default="config/config.json")

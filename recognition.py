@@ -7,6 +7,7 @@ from PIL import Image, ImageTk
 from datetime import datetime
 import pickle
 import json
+import sqlite3
 from tinydb import TinyDB, where
 import face_recognition
 from project.utils import Conf
@@ -20,55 +21,158 @@ le = pickle.loads(open(conf["le_path"], "rb").read())
 db = TinyDB(conf["db_path"])
 studentTable = db.table("student")
 json_file_path_enroll = 'database/enroll.json'
-json_file_path_attendance = 'attendance.json'
 
-# Initialize the video capture
+# Initialize SQLite database for attendance
+attendance_db_path = 'database/attendance.db'
+conn = sqlite3.connect(attendance_db_path, check_same_thread=False)
+cursor = conn.cursor()
+
+# Create attendance table if not exists
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS attendance (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id TEXT NOT NULL,
+        employee_name TEXT NOT NULL,
+        date TEXT NOT NULL,
+        check_in TEXT NOT NULL,
+        check_out TEXT,
+        working_hours REAL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(employee_id, date)
+    )
+''')
+cursor.execute('''
+    CREATE INDEX IF NOT EXISTS idx_employee_date 
+    ON attendance(employee_id, date)
+''')
+conn.commit()
+
+# Initialize the video capture with optimizations
 vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-# Function to store attendance
+vs.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+vs.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+vs.set(cv2.CAP_PROP_FPS, 30)
+
+# Cache for student names to avoid repeated database queries
+student_name_cache = {}
+for record in studentTable.all():
+    for student_id, details in record.items():
+        student_name_cache[student_id] = details[0]
+
+# Cache for today's attendance to reduce database queries
+attendance_cache = {}
+current_cache_date = datetime.now().strftime("%Y-%m-%d")
+
+def load_today_attendance():
+    """Load today's attendance into cache on startup"""
+    global attendance_cache, current_cache_date
+    today = datetime.now().strftime("%Y-%m-%d")
+    current_cache_date = today
+    
+    cursor.execute('''
+        SELECT employee_id, employee_name, check_in, check_out, working_hours
+        FROM attendance
+        WHERE date = ?
+    ''', (today,))
+    
+    rows = cursor.fetchall()
+    attendance_cache = {}
+    for row in rows:
+        emp_id, emp_name, check_in, check_out, working_hours = row
+        attendance_cache[emp_id] = {
+            'name': emp_name,
+            'check_in': check_in,
+            'check_out': check_out,
+            'working_hours': working_hours
+        }
+
+# Load today's attendance on startup
+load_today_attendance()
+
+# Frame processing counter - process every Nth frame for face detection
+frame_counter = 0
+process_every_n_frames = 3  # Process every 3rd frame for better FPS
+# Function to store attendance with IN/OUT tracking (optimized with SQLite and caching)
 def store_attendance(name, id):
+    global attendance_cache, current_cache_date
+    
     if not name or name.lower() == "unknown":
         print("Face not recognized, attendance not stored.")
         return
 
-    try:
-        with open(json_file_path_enroll, 'r') as file:
-            enroll_data = json.load(file)
-    except FileNotFoundError:
-        enroll_data = {"_default": {}, "student": {}}
-
-    students = enroll_data.get("student", {})
-    try:
-        with open(json_file_path_attendance, 'r') as file:
-            attendance_data = json.load(file)
-    except FileNotFoundError:
-        attendance_data = {"attendance": {}}
-
     current_date = datetime.now().strftime("%Y-%m-%d")
-
-    if id in attendance_data['attendance']:
-        attendance_date = attendance_data['attendance'][id].get('date_time', "").split(" ")[0]
-        if attendance_date == current_date:
-            return f"Attendance for {name} (ID: {id}) already recorded for today."
-
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    attendance_data['attendance'][id] = {
-        "name": name,
-        "date_time": current_time
-    }
+    
+    # Check if date changed (new day) - reload cache
+    if current_date != current_cache_date:
+        load_today_attendance()
 
-    print(f"Stored attendance for {name} (ID: {id}) at {current_time}")
-
-    with open(json_file_path_attendance, 'w') as file:
-        json.dump(attendance_data, file, indent=4)
+    # Check if employee has any record today in cache
+    if id in attendance_cache:
+        employee_record = attendance_cache[id]
+        
+        # Same day - update check_out time (allows multiple updates)
+        attendance_cache[id]['check_out'] = current_time
+        print(f"Check-OUT updated for {name} (ID: {id}) at {current_time}")
+        
+        # Calculate working hours
+        check_in_dt = datetime.strptime(employee_record['check_in'], "%Y-%m-%d %H:%M:%S")
+        check_out_dt = datetime.strptime(current_time, "%Y-%m-%d %H:%M:%S")
+        duration = check_out_dt - check_in_dt
+        hours = duration.total_seconds() / 3600
+        attendance_cache[id]['working_hours'] = round(hours, 2)
+        
+        # Update database using UPSERT
+        cursor.execute('''
+            INSERT INTO attendance (employee_id, employee_name, date, check_in, check_out, working_hours, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(employee_id, date) 
+            DO UPDATE SET 
+                check_out = excluded.check_out,
+                working_hours = excluded.working_hours,
+                updated_at = datetime('now')
+        ''', (id, name, current_date, employee_record['check_in'], current_time, round(hours, 2)))
+        conn.commit()
+        
+        return f"Check-OUT Updated: {name} | Total hours: {round(hours, 2)}h"
+    else:
+        # First check-in of the day
+        attendance_cache[id] = {
+            "name": name,
+            "check_in": current_time,
+            "check_out": None,
+            "working_hours": 0
+        }
+        print(f"Check-IN recorded for {name} (ID: {id}) at {current_time}")
+        
+        # Insert into database
+        cursor.execute('''
+            INSERT INTO attendance (employee_id, employee_name, date, check_in, check_out, working_hours)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(employee_id, date) 
+            DO UPDATE SET 
+                check_in = excluded.check_in,
+                updated_at = datetime('now')
+        ''', (id, name, current_date, current_time, None, 0))
+        conn.commit()
+        
+        return f"Check-IN: {name} marked present at {current_time.split(' ')[1]}"
 
 # Tkinter window setup
 root = tk.Tk()
-root.title("Smart Face Attendance System")
-root.geometry("800x600")
+root.title("Employee Attendance Management System")
+root.geometry("900x700")
 
 # Label to show attendance status
-attendance_label = tk.Label(root, text="Attendance Recognition: ", font=("Arial", 16))
-attendance_label.pack(pady=20)
+attendance_label = tk.Label(root, text="Status: Ready - Show face to CHECK-IN/CHECK-OUT", 
+                           font=("Arial", 14, "bold"), fg="#0066cc")
+attendance_label.pack(pady=10)
+
+# Info label for instructions
+info_label = tk.Label(root, text="First detection = CHECK-IN | Every subsequent detection = CHECK-OUT (updates)", 
+                     font=("Arial", 11), fg="#666666")
+info_label.pack(pady=5)
 
 # Canvas to display video feed
 canvas = tk.Canvas(root, width=640, height=480)
@@ -79,10 +183,12 @@ prevPerson = None
 curPerson = None
 consecCount = 0
 video_running = False  # Flag to check if the video feed is running
+last_boxes = []  # Store last detected boxes
+last_person_name = ""  # Store last recognized person name
 
 # Function to update the GUI with the video feed and attendance status
 def update_frame():
-    global prevPerson, curPerson, consecCount, video_running
+    global prevPerson, curPerson, consecCount, video_running, frame_counter, last_boxes, last_person_name
 
     if not video_running:
         return  # Stop updating frames if video is not running
@@ -92,36 +198,60 @@ def update_frame():
         print("Failed to grab frame")
         return
 
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    gray_image = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
-    gray_img = np.expand_dims(gray_image, axis=2).repeat(3, axis=2)
+    frame_counter += 1
+    
+    # Resize frame for faster processing (scale down by 0.5)
+    small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+    
+    # Only process face detection/recognition every N frames
+    if frame_counter % process_every_n_frames == 0:
+        # Convert to RGB for face_recognition (no grayscale needed)
+        rgb_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+        
+        # Detect faces on smaller frame
+        boxes = face_recognition.face_locations(rgb_small, model=conf["detection_method"])
+        
+        # Scale boxes back to original frame size
+        last_boxes = [(top*2, right*2, bottom*2, left*2) for (top, right, bottom, left) in boxes]
 
-    boxes = face_recognition.face_locations(gray_img, model=conf["detection_method"])
+        if len(boxes) > 0:
+            # Get encodings from smaller frame
+            encodings = face_recognition.face_encodings(rgb_small, boxes)
+            preds = recognizer.predict_proba(encodings)[0]
+            j = np.argmax(preds)
+            curPerson = le.classes_[j]
 
-    for (top, right, bottom, left) in boxes:
+            if prevPerson == curPerson:
+                consecCount += 1
+            else:
+                consecCount = 0
+
+            prevPerson = curPerson
+
+            # Use cached student names instead of database query
+            name = student_name_cache.get(curPerson, "Unknown")
+            last_person_name = name
+            
+            # Only store attendance every 10 consecutive frames (reduce writes)
+            if consecCount == 10:
+                attn_info = store_attendance(name, curPerson)
+                if attn_info:
+                    attendance_label.config(text=f"{attn_info}")
+                # Reset counter to allow next check-out after some time
+                consecCount = 0
+        else:
+            last_person_name = ""
+    
+    # Draw rectangles on every frame using last detected boxes
+    for (top, right, bottom, left) in last_boxes:
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
-    if len(boxes) > 0:
-        encodings = face_recognition.face_encodings(rgb, boxes)
-        preds = recognizer.predict_proba(encodings)[0]
-        j = np.argmax(preds)
-        curPerson = le.classes_[j]
-
-        if prevPerson == curPerson:
-            consecCount += 1
-        else:
-            consecCount = 0
-
-        prevPerson = curPerson
-
-        name = studentTable.search(where(curPerson))[0][curPerson][0]
-        cv2.putText(frame, "Status:Face Detecting", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-        attn_info = store_attendance(name, curPerson)
-        if attn_info:
-            attendance_label.config(text=f"Attendance Status: {attn_info}")
-        else:
-            attendance_label.config(text=f"Attendance Status: {name}")
+        if last_person_name:
+            cv2.putText(frame, last_person_name, (left, top - 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    
+    # Add status text
+    cv2.putText(frame, "Status: Detecting", (10, 20), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # Convert the frame to an ImageTk object and update the canvas
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -146,6 +276,7 @@ def exit_program():
     video_running = False  # Stop the video feed
     vs.release()  # Release the video capture
     cv2.destroyAllWindows()  # Close all OpenCV windows
+    conn.close()  # Close database connection
     root.quit()  # Exit the Tkinter main loop
 
 # Start button setup
@@ -162,3 +293,4 @@ root.mainloop()
 # Clean up after exiting the Tkinter window
 vs.release()
 cv2.destroyAllWindows()
+conn.close()

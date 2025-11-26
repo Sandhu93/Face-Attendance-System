@@ -1,0 +1,41 @@
+# Face Attendance System - Git Ignore
+
+# Database files
+database/enroll.json
+database/attendance.db
+database/attendance.db-journal
+!database/.gitkeep
+
+
+# Dataset images
+dataset/
+
+# Output models and encodings
+output/
+!output/.gitkeep
+
+# Attendance records
+attendance.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
