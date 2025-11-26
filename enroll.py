@@ -5,6 +5,8 @@ from tinydb import TinyDB, where
 import face_recognition
 import cv2
 import os
+import sys
+import platform
 import time
 import threading
 
@@ -75,8 +77,17 @@ def enroll_student():
     # Thread for face enrollment to prevent GUI freezing
     def process_enrollment():
         try:
-            # Start camera capture
-            vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+            # Start camera capture (cross-platform compatible)
+            if platform.system() == 'Windows':
+                vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Windows-specific DirectShow
+            else:
+                vs = cv2.VideoCapture(0)  # Linux/Mac/Raspberry Pi
+            
+            # Verify camera opened successfully
+            if not vs.isOpened():
+                messagebox.showerror("Camera Error", "Failed to open camera. Please check:\n1. Camera is connected\n2. Camera permissions are granted\n3. No other app is using the camera")
+                enroll_button.config(state=tk.NORMAL)
+                return
 
             # Create directory for storing face images
             student_path = os.path.join(conf["dataset_path"], conf["class"], student_id)

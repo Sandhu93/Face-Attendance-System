@@ -115,6 +115,19 @@ python3 auto_enroll.py
 
 ## 📸 Camera Configuration
 
+### ⚠️ Camera Issues? 
+**See [CAMERA_TROUBLESHOOTING.md](CAMERA_TROUBLESHOOTING.md) for detailed solutions**
+
+### Test Camera First
+
+```bash
+cd ~/smartAttendance
+source .venv/bin/activate
+python3 test_camera.py
+```
+
+This will verify your camera works before trying enrollment.
+
 ### Test Camera
 ```bash
 # For USB camera
@@ -125,16 +138,9 @@ python3 -c "import cv2; print(cv2.VideoCapture(0).read()[0])"
 libcamera-hello --list-cameras
 ```
 
-### Update Code for Pi Camera (if needed)
-If using Pi Camera Module, update `recognition.py` and `auto_enroll.py`:
+### Camera Already Fixed! ✅
 
-```python
-# Replace:
-vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-
-# With:
-vs = cv2.VideoCapture(0)  # Remove CAP_DSHOW (Windows-only)
-```
+The latest code automatically detects your platform (Windows/Linux) and uses the correct camera backend. No manual changes needed!
 
 ---
 

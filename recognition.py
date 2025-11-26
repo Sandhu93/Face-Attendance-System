@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import cv2
 import time
+import platform
 import numpy as np
 from PIL import Image, ImageTk
 from datetime import datetime
@@ -41,15 +42,29 @@ cursor.execute('''
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(employee_id, date)
     )
-''')
+'''
 cursor.execute('''
     CREATE INDEX IF NOT EXISTS idx_employee_date 
     ON attendance(employee_id, date)
 ''')
 conn.commit()
 
-# Initialize the video capture with optimizations
-vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+# Initialize the video capture (cross-platform compatible)
+if platform.system() == 'Windows':
+    vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Windows DirectShow
+else:
+    vs = cv2.VideoCapture(0)  # Linux/Mac/Raspberry Pi
+
+# Verify camera opened successfully
+if not vs.isOpened():
+    print("[ERROR] Failed to open camera!")
+    print("Please check:")
+    print("  1. Camera is connected properly")
+    print("  2. Camera permissions are granted")
+    print("  3. No other application is using the camera")
+    print("  4. On Raspberry Pi: Check 'vcgencmd get_camera' and enable camera in raspi-config")
+    exit(1)
+
 vs.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 vs.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 vs.set(cv2.CAP_PROP_FPS, 30)

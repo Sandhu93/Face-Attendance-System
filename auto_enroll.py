@@ -9,6 +9,7 @@ from tinydb import TinyDB, where
 import face_recognition
 import cv2
 import os
+import platform
 import time
 import threading
 import pickle
@@ -54,8 +55,15 @@ def enroll_employee(employee_id, employee_name, progress_callback, status_callba
         if found_employees:
             return False, f"Employee ID '{employee_id}' is already enrolled."
         
-        # Start camera capture
-        vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        # Start camera capture (cross-platform compatible)
+        if platform.system() == 'Windows':
+            vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Windows DirectShow
+        else:
+            vs = cv2.VideoCapture(0)  # Linux/Mac/Raspberry Pi
+        
+        # Verify camera opened successfully
+        if not vs.isOpened():
+            return False, "Failed to open camera. Please check camera connection."
         
         # Create directory for storing face images
         employee_path = os.path.join(conf["dataset_path"], conf["class"], employee_id)

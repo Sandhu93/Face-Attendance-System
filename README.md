@@ -2,7 +2,46 @@
 
 ## ⚡ Quick Start (No Coding Required!)
 
-### 🚀 For First-Time Users
+### 🪟 Windows
+```powershell
+.\START_HERE.bat
+```
+
+### 🍓 Raspberry Pi / Linux
+```bash
+./start_here.sh
+```
+
+### 🎥 Camera Issues?
+```bash
+# Test camera first!
+python test_camera.py
+
+# Run diagnostic
+./camera_diagnostic.sh
+
+# See troubleshooting guide
+See CAMERA_TROUBLESHOOTING.md
+```
+
+---
+
+## 📚 Documentation Index
+
+| Document | Purpose |
+|----------|---------|
+| **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** | ⚡ Quick commands & tips |
+| **[USER_GUIDE.md](USER_GUIDE.md)** | 👤 Non-technical user guide |
+| **[RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md)** | 🍓 Raspberry Pi installation |
+| **[CAMERA_TROUBLESHOOTING.md](CAMERA_TROUBLESHOOTING.md)** | 🎥 Fix camera issues |
+| **[CAMERA_FIX_SUMMARY.md](CAMERA_FIX_SUMMARY.md)** | 🔧 Technical fix details |
+| **[SQLITE_ATTENDANCE_README.md](SQLITE_ATTENDANCE_README.md)** | 💾 Database documentation |
+
+---
+
+## 🚀 For First-Time Users
+
+### Windows (Windows 11)
 
 1. **Activate Virtual Environment:**
    ```powershell
@@ -22,6 +61,34 @@
    # Or directly
    python auto_enroll.py
    ```
+
+### Raspberry Pi / Linux
+
+1. **First-Time Setup:**
+   ```bash
+   cd ~/smartAttendance
+   source .venv/bin/activate
+   pip3 install -r requirements.txt
+   ```
+
+2. **Enable Camera** (Raspberry Pi):
+   ```bash
+   sudo raspi-config
+   # Interface Options → Camera → Enable → Reboot
+   ```
+
+3. **Test Camera:**
+   ```bash
+   python3 test_camera.py
+   ```
+
+4. **Launch System:**
+   ```bash
+   chmod +x start_here.sh
+   ./start_here.sh
+   ```
+
+**📖 See [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md) for detailed Pi setup**
 
 ---
 
@@ -43,6 +110,14 @@
    - Trains model
    - Ready for recognition!
 ```
+
+### 🔧 Cross-Platform Camera Support
+
+**Fixed:** Camera now works on Windows, Linux, Mac, and Raspberry Pi!
+- ✅ Automatic platform detection
+- ✅ Clear error messages
+- ✅ Camera test tool included
+- ✅ Comprehensive troubleshooting guide
 
 ---
 
