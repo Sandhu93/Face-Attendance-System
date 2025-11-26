@@ -42,7 +42,7 @@ cursor.execute('''
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(employee_id, date)
     )
-'''
+''')
 cursor.execute('''
     CREATE INDEX IF NOT EXISTS idx_employee_date 
     ON attendance(employee_id, date)
