@@ -23,6 +23,33 @@ db = TinyDB(conf["db_path"])
 studentTable = db.table("student")
 json_file_path_enroll = 'database/enroll.json'
 
+def open_camera():
+    """Open camera with best available method for the platform"""
+    if platform.system() == 'Windows':
+        return cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    
+    # For Raspberry Pi 5 and other Linux systems
+    # Try V4L2 backend with multiple indices
+    for idx in [0, 1, 2]:
+        cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                cap.release()
+                return cv2.VideoCapture(idx, cv2.CAP_V4L2)
+            cap.release()
+    
+    # Fallback to default backend
+    for idx in [0, 1, 2]:
+        cap = cv2.VideoCapture(idx)
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                return cap
+            cap.release()
+    
+    return cv2.VideoCapture(0)
+
 # Initialize SQLite database for attendance
 attendance_db_path = 'database/attendance.db'
 conn = sqlite3.connect(attendance_db_path, check_same_thread=False)
