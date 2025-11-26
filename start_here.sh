@@ -2,10 +2,35 @@
 # Employee Attendance System - Easy Launcher
 # Works on Linux/Raspberry Pi/Mac
 
+# Project directory - Change this if your project is in a different location
+PROJECT_DIR="$HOME/smartAttendance"
+
+# Change to project directory
+cd "$PROJECT_DIR" || {
+    echo "Error: Project directory not found at $PROJECT_DIR"
+    echo "Please update PROJECT_DIR in this script to match your installation path."
+    read -p "Press Enter to exit..."
+    exit 1
+}
+
+# Activate virtual environment
+if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
+    echo "Virtual environment activated ✓"
+elif [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+    echo "Virtual environment activated ✓"
+else
+    echo "Warning: Virtual environment not found!"
+    echo "Looking for .venv or venv in $PROJECT_DIR"
+    read -p "Press Enter to continue anyway or Ctrl+C to exit..."
+fi
+
 clear
 echo "================================================"
 echo "   Employee Attendance Management System"
 echo "================================================"
+echo "Working Directory: $PROJECT_DIR"
 echo ""
 echo "Select an option:"
 echo ""
@@ -59,6 +84,10 @@ case $choice in
     6)
         echo ""
         echo "Goodbye!"
+        # Deactivate virtual environment if it was activated
+        if [ -n "$VIRTUAL_ENV" ]; then
+            deactivate
+        fi
         exit 0
         ;;
     *)
@@ -67,3 +96,8 @@ case $choice in
         read -p "Press Enter to continue..."
         ;;
 esac
+
+# Deactivate virtual environment after execution
+if [ -n "$VIRTUAL_ENV" ]; then
+    deactivate
+fi
