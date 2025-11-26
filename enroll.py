@@ -15,6 +15,33 @@ if not os.path.exists("dataset"):
 if not os.path.exists("dataset/PROJECT"):
     os.mkdir("dataset/PROJECT")
 
+def open_camera():
+    """Open camera with best available method for the platform"""
+    if platform.system() == 'Windows':
+        return cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    
+    # For Raspberry Pi 5 and other Linux systems
+    # Try V4L2 backend with multiple indices
+    for idx in [0, 1, 2]:
+        cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                cap.release()
+                return cv2.VideoCapture(idx, cv2.CAP_V4L2)
+            cap.release()
+    
+    # Fallback to default backend
+    for idx in [0, 1, 2]:
+        cap = cv2.VideoCapture(idx)
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                return cap
+            cap.release()
+    
+    return cv2.VideoCapture(0)
+
 # Stop event to indicate if the enrollment should be stopped
 stop_event = threading.Event()
 
@@ -78,14 +105,11 @@ def enroll_student():
     def process_enrollment():
         try:
             # Start camera capture (cross-platform compatible)
-            if platform.system() == 'Windows':
-                vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Windows-specific DirectShow
-            else:
-                vs = cv2.VideoCapture(0)  # Linux/Mac/Raspberry Pi
+            vs = open_camera()
             
             # Verify camera opened successfully
             if not vs.isOpened():
-                messagebox.showerror("Camera Error", "Failed to open camera. Please check:\n1. Camera is connected\n2. Camera permissions are granted\n3. No other app is using the camera")
+                messagebox.showerror("Camera Error", "Failed to open camera. Please check:\n1. Camera is connected\n2. Camera permissions are granted\n3. No other app is using the camera\n4. Run: python3 test_camera.py")
                 enroll_button.config(state=tk.NORMAL)
                 return
 

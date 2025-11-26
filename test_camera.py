@@ -5,6 +5,54 @@ Tests camera connection and displays video feed
 import cv2
 import platform
 import sys
+import os
+
+def find_camera():
+    """Find available camera index and backend"""
+    
+    # For Raspberry Pi 5, try libcamera first
+    if platform.system() == 'Linux' and os.path.exists('/usr/bin/libcamera-hello'):
+        print("[INFO] Raspberry Pi detected, trying libcamera backend...")
+        # Try CAP_V4L2 with different indices
+        for idx in [0, 1, 2]:
+            cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
+            if cap.isOpened():
+                ret, _ = cap.read()
+                if ret:
+                    print(f"[SUCCESS] Found camera at index {idx} with V4L2")
+                    return cap, idx, 'V4L2'
+                cap.release()
+        
+        # Try without backend specification
+        for idx in [0, 1, 2]:
+            cap = cv2.VideoCapture(idx)
+            if cap.isOpened():
+                ret, _ = cap.read()
+                if ret:
+                    print(f"[SUCCESS] Found camera at index {idx}")
+                    return cap, idx, 'Default'
+                cap.release()
+    
+    # Windows
+    if platform.system() == 'Windows':
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        if cap.isOpened():
+            print("[INFO] Using DirectShow backend (Windows)")
+            return cap, 0, 'DSHOW'
+    
+    # Generic Linux/Mac - try multiple indices
+    else:
+        print("[INFO] Scanning for cameras...")
+        for idx in range(10):
+            cap = cv2.VideoCapture(idx)
+            if cap.isOpened():
+                ret, _ = cap.read()
+                if ret:
+                    print(f"[SUCCESS] Found camera at index {idx}")
+                    return cap, idx, 'Default'
+                cap.release()
+    
+    return None, None, None
 
 print("=" * 60)
 print("Camera Test Script")
@@ -16,15 +64,10 @@ print()
 # Try to open camera
 print("[INFO] Attempting to open camera...")
 
-if platform.system() == 'Windows':
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    print("[INFO] Using DirectShow backend (Windows)")
-else:
-    cap = cv2.VideoCapture(0)
-    print("[INFO] Using default backend (Linux/Mac)")
+cap, camera_idx, backend = find_camera()
 
 # Check if camera opened successfully
-if not cap.isOpened():
+if cap is None or not cap.isOpened():
     print()
     print("[ERROR] Failed to open camera!")
     print()
@@ -35,6 +78,7 @@ if not cap.isOpened():
         print("For Raspberry Pi / Linux:")
         print("  1. Check camera is detected:")
         print("     v4l2-ctl --list-devices")
+        print("     libcamera-hello --list-cameras  (for Pi 5)")
         print()
         print("  2. For Pi Camera, enable it:")
         print("     sudo raspi-config")
@@ -74,6 +118,8 @@ if not cap.isOpened():
     sys.exit(1)
 
 print("[SUCCESS] Camera opened successfully!")
+print(f"[INFO] Using camera index: {camera_idx}")
+print(f"[INFO] Backend: {backend}")
 print()
 
 # Get camera properties

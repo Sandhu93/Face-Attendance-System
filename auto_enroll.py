@@ -26,6 +26,33 @@ if not os.path.exists("dataset/PROJECT"):
 if not os.path.exists("output"):
     os.mkdir("output")
 
+def open_camera():
+    """Open camera with best available method for the platform"""
+    if platform.system() == 'Windows':
+        return cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    
+    # For Raspberry Pi 5 and other Linux systems
+    # Try V4L2 backend with multiple indices
+    for idx in [0, 1, 2]:
+        cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                cap.release()
+                return cv2.VideoCapture(idx, cv2.CAP_V4L2)
+            cap.release()
+    
+    # Fallback to default backend
+    for idx in [0, 1, 2]:
+        cap = cv2.VideoCapture(idx)
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                return cap
+            cap.release()
+    
+    return cv2.VideoCapture(0)
+
 # Global variables
 stop_event = threading.Event()
 conf = None
@@ -56,14 +83,11 @@ def enroll_employee(employee_id, employee_name, progress_callback, status_callba
             return False, f"Employee ID '{employee_id}' is already enrolled."
         
         # Start camera capture (cross-platform compatible)
-        if platform.system() == 'Windows':
-            vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Windows DirectShow
-        else:
-            vs = cv2.VideoCapture(0)  # Linux/Mac/Raspberry Pi
+        vs = open_camera()
         
         # Verify camera opened successfully
         if not vs.isOpened():
-            return False, "Failed to open camera. Please check camera connection."
+            return False, "Failed to open camera. Run 'python3 test_camera.py' to diagnose."
         
         # Create directory for storing face images
         employee_path = os.path.join(conf["dataset_path"], conf["class"], employee_id)

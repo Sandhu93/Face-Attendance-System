@@ -50,10 +50,8 @@ cursor.execute('''
 conn.commit()
 
 # Initialize the video capture (cross-platform compatible)
-if platform.system() == 'Windows':
-    vs = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Windows DirectShow
-else:
-    vs = cv2.VideoCapture(0)  # Linux/Mac/Raspberry Pi
+print("[INFO] Opening camera...")
+vs = open_camera()
 
 # Verify camera opened successfully
 if not vs.isOpened():
@@ -62,8 +60,11 @@ if not vs.isOpened():
     print("  1. Camera is connected properly")
     print("  2. Camera permissions are granted")
     print("  3. No other application is using the camera")
-    print("  4. On Raspberry Pi: Check 'vcgencmd get_camera' and enable camera in raspi-config")
+    print("  4. Run diagnostic: python3 test_camera.py")
+    print("  5. On Raspberry Pi 5: Camera might be at different index")
     exit(1)
+
+print("[SUCCESS] Camera opened successfully!")
 
 vs.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 vs.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
