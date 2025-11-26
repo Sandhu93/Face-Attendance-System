@@ -107,6 +107,10 @@ for record in studentTable.all():
 attendance_cache = {}
 current_cache_date = datetime.now().strftime("%Y-%m-%d")
 
+# Cooldown tracking: employee_id -> last_checkout_timestamp
+checkout_cooldown = {}  # 10-minute cooldown after checkout
+COOLDOWN_MINUTES = 10
+
 def load_today_attendance():
     """Load today's attendance into cache on startup"""
     global attendance_cache, current_cache_date
@@ -138,7 +142,7 @@ frame_counter = 0
 process_every_n_frames = 3  # Process every 3rd frame for better FPS
 # Function to store attendance with IN/OUT tracking (optimized with SQLite and caching)
 def store_attendance(name, id):
-    global attendance_cache, current_cache_date
+    global attendance_cache, current_cache_date, checkout_cooldown
     
     if not name or name.lower() == "unknown":
         print("Face not recognized, attendance not stored.")
@@ -146,6 +150,15 @@ def store_attendance(name, id):
 
     current_date = datetime.now().strftime("%Y-%m-%d")
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_timestamp = datetime.now()
+    
+    # Check if employee is in cooldown period (10 minutes after last checkout)
+    if id in checkout_cooldown:
+        time_since_checkout = (current_timestamp - checkout_cooldown[id]).total_seconds() / 60
+        if time_since_checkout < COOLDOWN_MINUTES:
+            remaining = COOLDOWN_MINUTES - int(time_since_checkout)
+            print(f"Employee {name} (ID: {id}) is in cooldown. {remaining} minutes remaining.")
+            return None  # Ignore detection during cooldown
     
     # Check if date changed (new day) - reload cache
     if current_date != current_cache_date:
@@ -178,6 +191,10 @@ def store_attendance(name, id):
         ''', (id, name, current_date, employee_record['check_in'], current_time, round(hours, 2)))
         conn.commit()
         
+        # Set cooldown timer (10 minutes from now)
+        checkout_cooldown[id] = current_timestamp
+        print(f"Cooldown activated for {name} (ID: {id}) - 10 minutes")
+        
         return f"Check-OUT Updated: {name} | Total hours: {round(hours, 2)}h", "checkout", id, current_time, round(hours, 2)
     else:
         # First check-in of the day
@@ -187,6 +204,11 @@ def store_attendance(name, id):
             "check_out": None,
             "working_hours": 0
         }
+        
+        # Clear cooldown on new check-in (new day)
+        if id in checkout_cooldown:
+            del checkout_cooldown[id]
+        
         print(f"Check-IN recorded for {name} (ID: {id}) at {current_time}")
         
         # Insert into database
