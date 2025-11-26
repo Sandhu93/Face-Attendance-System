@@ -204,22 +204,51 @@ def store_attendance(name, id):
 
 # Tkinter window setup
 root = tk.Tk()
-root.title("Employee Attendance Management System")
-root.geometry("900x700")
+root.title("Employee Attendance Management System - Press 'S' to Start, 'Q' to Quit, 'F' for Fullscreen")
+
+# Get screen dimensions
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+
+# Calculate video display size (maintain aspect ratio)
+video_width = min(1280, int(screen_width * 0.9))
+video_height = int(video_width * 3 / 4)  # 4:3 aspect ratio
+
+# Set window size
+window_height = video_height + 150  # Extra space for status labels
+root.geometry(f"{video_width}x{window_height}+{(screen_width-video_width)//2}+20")
+root.configure(bg="#1a1a1a")
+
+# Fullscreen toggle variable
+is_fullscreen = False
+
+# Label to show keyboard shortcuts
+shortcut_label = tk.Label(root, 
+                          text="⌨️  Keyboard: [S] Start | [Q] Quit | [F] Fullscreen | [R] Reset", 
+                          font=("Arial", 12, "bold"), 
+                          fg="#00ff00",
+                          bg="#1a1a1a")
+shortcut_label.pack(pady=5)
 
 # Label to show attendance status
-attendance_label = tk.Label(root, text="Status: Ready - Show face to CHECK-IN/CHECK-OUT", 
-                           font=("Arial", 14, "bold"), fg="#0066cc")
-attendance_label.pack(pady=10)
+attendance_label = tk.Label(root, 
+                           text="Status: Press 'S' to START recognition", 
+                           font=("Arial", 16, "bold"), 
+                           fg="#ffcc00",
+                           bg="#1a1a1a")
+attendance_label.pack(pady=5)
 
 # Info label for instructions
-info_label = tk.Label(root, text="First detection = CHECK-IN | Every subsequent detection = CHECK-OUT (updates)", 
-                     font=("Arial", 11), fg="#666666")
-info_label.pack(pady=5)
+info_label = tk.Label(root, 
+                     text="First detection = CHECK-IN | Every subsequent detection = CHECK-OUT (updates)", 
+                     font=("Arial", 11), 
+                     fg="#888888",
+                     bg="#1a1a1a")
+info_label.pack(pady=3)
 
-# Canvas to display video feed
-canvas = tk.Canvas(root, width=640, height=480)
-canvas.pack()
+# Canvas to display video feed (larger size)
+canvas = tk.Canvas(root, width=video_width-40, height=video_height-40, bg="#000000", highlightthickness=0)
+canvas.pack(pady=10)
 
 # Initialize variables
 prevPerson = None
@@ -298,37 +327,84 @@ def update_frame():
 
     # Convert the frame to an ImageTk object and update the canvas
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    img = Image.fromarray(frame_rgb)
-    img_tk = ImageTk.PhotoImage(image=img)
-
-    canvas.create_image(0, 0, anchor="nw", image=img_tk)
-    canvas.image = img_tk
+    
+    # Resize frame to fit canvas
+    canvas_width = canvas.winfo_width()
+    canvas_height = canvas.winfo_height()
+    if canvas_width > 1 and canvas_height > 1:
+        img = Image.fromarray(frame_rgb)
+        img = img.resize((canvas_width, canvas_height), Image.LANCZOS)
+        img_tk = ImageTk.PhotoImage(image=img)
+        
+        canvas.create_image(0, 0, anchor="nw", image=img_tk)
+        canvas.image = img_tk
 
     # Repeat the frame update every 10 milliseconds
     root.after(10, update_frame)
 
-# Start button function
+# Start video function
 def start_video():
     global video_running
-    video_running = True
-    update_frame()
+    if not video_running:
+        video_running = True
+        attendance_label.config(text="Status: RUNNING - Show face to CHECK-IN/CHECK-OUT", fg="#00ff00")
+        update_frame()
 
-# Exit button function
-def exit_program():
+# Stop video function
+def stop_video():
     global video_running
-    video_running = False  # Stop the video feed
-    vs.release()  # Release the video capture
-    cv2.destroyAllWindows()  # Close all OpenCV windows
-    conn.close()  # Close database connection
-    root.quit()  # Exit the Tkinter main loop
+    video_running = False
+    attendance_label.config(text="Status: STOPPED - Press 'S' to restart", fg="#ff6600")
 
-# Start button setup
-start_button = tk.Button(root, text="Start", font=("Arial", 16), bg="#00ff00", command=start_video)
-start_button.pack(pady=10)
+# Reset function
+def reset_status():
+    global consecCount, prevPerson, curPerson
+    consecCount = 0
+    prevPerson = None
+    curPerson = None
+    attendance_label.config(text="Status: RESET - Recognition cleared", fg="#ffcc00")
 
-# Exit button setup
-exit_button = tk.Button(root, text="Exit", font=("Arial", 16), bg="#ff0000", command=exit_program)
-exit_button.pack(pady=20)
+# Toggle fullscreen
+def toggle_fullscreen(event=None):
+    global is_fullscreen
+    is_fullscreen = not is_fullscreen
+    root.attributes("-fullscreen", is_fullscreen)
+    if is_fullscreen:
+        shortcut_label.config(text="⌨️  FULLSCREEN MODE | Press 'F' or ESC to exit fullscreen")
+    else:
+        shortcut_label.config(text="⌨️  Keyboard: [S] Start | [Q] Quit | [F] Fullscreen | [R] Reset")
+
+# Exit program function
+def exit_program(event=None):
+    global video_running
+    video_running = False
+    vs.release()
+    cv2.destroyAllWindows()
+    conn.close()
+    root.quit()
+
+# Keyboard event handler
+def on_key_press(event):
+    key = event.char.lower()
+    
+    if key == 's':
+        start_video()
+    elif key == 'q':
+        exit_program()
+    elif key == 'f':
+        toggle_fullscreen()
+    elif key == 'r':
+        reset_status()
+    elif key == 'p':  # Pause
+        stop_video()
+
+# Bind keyboard events
+root.bind('<KeyPress>', on_key_press)
+root.bind('<Escape>', toggle_fullscreen)  # ESC to exit fullscreen
+root.bind('<F11>', toggle_fullscreen)     # F11 for fullscreen (standard)
+
+# Auto-start video on launch
+root.after(1000, start_video)  # Start after 1 second
 
 # Start the Tkinter main loop
 root.mainloop()
