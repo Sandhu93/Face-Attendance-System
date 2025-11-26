@@ -119,6 +119,26 @@ See CAMERA_TROUBLESHOOTING.md
 - ✅ Camera test tool included
 - ✅ Comprehensive troubleshooting guide
 
+### 🗑️ Employee Management System (`manage_employees.py`)
+
+**New:** Easily delete enrollments and manage employees!
+
+```
+🚀 Run: python manage_employees.py
+
+✅ View all enrolled employees
+✅ Select one or multiple to delete
+✅ Automatic model re-training
+✅ Preserves attendance history
+```
+
+**Features:**
+- View employee details (ID, name, image count)
+- Delete single or multiple employees
+- Automatic cleanup of datasets and encodings
+- Model re-trains automatically
+- Safe with confirmation dialogs
+
 ---
 
 ## 🎯 Main Features

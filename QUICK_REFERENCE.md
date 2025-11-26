@@ -31,11 +31,31 @@ chmod +x start_here.sh
 
 ---
 
-## 🎯 Daily Usage
+## 🚀 Daily Usage
 
 ```bash
 cd ~/smartAttendance
 ./start_here.sh
+```
+
+**Individual Commands:**
+```bash
+# Enroll new employee
+python3 auto_enroll.py
+
+# Start attendance recognition
+python3 recognition.py
+
+# View reports
+python3 view_attendance.py report
+python3 view_attendance.py incomplete
+python3 view_attendance.py absent
+
+# Manage employees (delete enrollments)
+python3 manage_employees.py
+
+# Test camera
+python3 test_camera.py
 ```
 
 Or create desktop shortcut:
@@ -153,15 +173,16 @@ python3 -c "import cv2; [print(f'Camera {i}: {cv2.VideoCapture(i).isOpened()}') 
 ## 📊 Menu Options
 
 ```
-./start_here.sh
+./start_here.sh  (Linux/Pi)  or  START_HERE.bat  (Windows)
 
 1. Enroll New Employee     → Use for new employees
 2. Start Recognition       → Daily attendance system
 3. View Today's Report     → See today's attendance
 4. Incomplete Checkouts    → Find forgotten checkouts
 5. View Absent Employees   → Who's not present
-6. Test Camera             → Troubleshoot camera
-7. Exit                    → Close menu
+6. Manage Employees        → Delete enrollments & re-train
+7. Test Camera             → Troubleshoot camera (Linux/Pi)
+8. Exit                    → Close menu
 ```
 
 ---

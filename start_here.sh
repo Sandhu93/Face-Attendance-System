@@ -39,13 +39,14 @@ echo "   2. Start Attendance Recognition"
 echo "   3. View Today's Attendance Report"
 echo "   4. View Incomplete Checkouts"
 echo "   5. View Absent Employees"
-echo "   6. Test Camera (Troubleshooting)"
-echo "   7. Exit"
+echo "   6. Manage Employees (Delete Enrollments)"
+echo "   7. Test Camera (Troubleshooting)"
+echo "   8. Exit"
 echo ""
 echo "================================================"
 echo ""
 
-read -p "Enter your choice (1-7): " choice
+read -p "Enter your choice (1-8): " choice
 
 case $choice in
     1)
@@ -84,11 +85,17 @@ case $choice in
         ;;
     6)
         echo ""
+        echo "Opening Employee Management..."
+        echo ""
+        python3 manage_employees.py
+        ;;
+    7)
+        echo ""
         echo "Testing Camera..."
         echo ""
         python3 test_camera.py
         ;;
-    7)
+    8)
         echo ""
         echo "Goodbye!"
         # Deactivate virtual environment if it was activated

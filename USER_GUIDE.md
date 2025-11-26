@@ -18,7 +18,8 @@ A menu will appear with these options:
 3. View Today's Attendance Report
 4. View Incomplete Checkouts
 5. View Absent Employees
-6. Exit
+6. Manage Employees (Delete Enrollments)
+7. Exit
 ```
 
 Just enter the number and press Enter!
@@ -133,6 +134,51 @@ python view_attendance.py incomplete
 ```powershell
 python view_attendance.py absent
 ```
+
+---
+
+## 🗑️ Delete Enrollments (Manage Employees)
+
+### When to Use:
+- ❌ Employee left the company
+- ❌ Need to re-enroll with better photos
+- ❌ Duplicate enrollment by mistake
+- ❌ Testing/cleanup
+
+### How to Delete Employees:
+
+**Using Menu (Easiest):**
+1. Double-click `START_HERE.bat`
+2. Choose option `6: Manage Employees`
+3. A window opens showing all employees
+4. Select employee(s) to delete (hold Ctrl for multiple)
+5. Click "🗑️ Delete Selected"
+6. Confirm deletion
+7. System automatically re-trains the model
+
+**Direct Command:**
+```powershell
+python manage_employees.py
+```
+
+### What Gets Deleted:
+- ✗ Employee record from database
+- ✗ All face images from dataset
+- ✗ Face encodings
+- ✅ Model automatically re-trained with remaining employees
+- ✅ Attendance history preserved (in attendance.db)
+
+### Features:
+- 📋 View all enrolled employees with image count
+- 👁️ View employee details before deleting
+- 🔄 Refresh employee list
+- 🗑️ Delete single or multiple employees at once
+- ⚙️ Automatic model re-training after deletion
+- ⚠️ Confirmation dialog to prevent accidents
+
+### Note:
+⚠️ **Deletion is permanent!** Make sure you want to remove the employee before confirming.
+✅ **Attendance records are NOT deleted** - historical data is preserved in the database.
 
 ---
 

@@ -13,12 +13,13 @@ echo   2. Start Attendance Recognition
 echo   3. View Today's Attendance Report
 echo   4. View Incomplete Checkouts
 echo   5. View Absent Employees
-echo   6. Exit
+echo   6. Manage Employees (Delete Enrollments)
+echo   7. Exit
 echo.
 echo ================================================
 echo.
 
-set /p choice="Enter your choice (1-6): "
+set /p choice="Enter your choice (1-7): "
 
 if "%choice%"=="1" (
     echo.
@@ -65,6 +66,14 @@ if "%choice%"=="5" (
 )
 
 if "%choice%"=="6" (
+    echo.
+    echo Opening Employee Management...
+    echo.
+    python manage_employees.py
+    goto end
+)
+
+if "%choice%"=="7" (
     echo.
     echo Goodbye!
     goto end
