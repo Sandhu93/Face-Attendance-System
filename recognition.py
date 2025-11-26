@@ -178,7 +178,7 @@ def store_attendance(name, id):
         ''', (id, name, current_date, employee_record['check_in'], current_time, round(hours, 2)))
         conn.commit()
         
-        return f"Check-OUT Updated: {name} | Total hours: {round(hours, 2)}h"
+        return f"Check-OUT Updated: {name} | Total hours: {round(hours, 2)}h", "checkout", id, current_time, round(hours, 2)
     else:
         # First check-in of the day
         attendance_cache[id] = {
@@ -200,7 +200,7 @@ def store_attendance(name, id):
         ''', (id, name, current_date, current_time, None, 0))
         conn.commit()
         
-        return f"Check-IN: {name} marked present at {current_time.split(' ')[1]}"
+        return f"Check-IN: {name} marked present at {current_time.split(' ')[1]}", "checkin", id, current_time, 0
 
 # Tkinter window setup
 root = tk.Tk()
@@ -249,6 +249,66 @@ info_label.pack(pady=3)
 # Canvas to display video feed (larger size)
 canvas = tk.Canvas(root, width=video_width-40, height=video_height-40, bg="#000000", highlightthickness=0)
 canvas.pack(pady=10)
+
+# Notification panel for check-in/check-out (initially hidden)
+notification_frame = tk.Frame(root, bg="#ffffff", relief="raised", borderwidth=3)
+notification_label = tk.Label(notification_frame, text="", font=("Arial", 20, "bold"), bg="#ffffff", fg="#000000")
+notification_label.pack(pady=10)
+
+notification_details = tk.Label(notification_frame, text="", font=("Arial", 14), bg="#ffffff", fg="#333333")
+notification_details.pack(pady=5)
+
+notification_photo_label = tk.Label(notification_frame, bg="#ffffff")
+notification_photo_label.pack(pady=10)
+
+# Function to show notification
+def show_notification(name, emp_id, action_type, time_str, hours=0):
+    """Show check-in/check-out notification for 3 seconds"""
+    # Position notification in center of canvas
+    x = (video_width - 400) // 2
+    y = (video_height - 200) // 2
+    
+    # Set colors based on action
+    if action_type == "checkin":
+        bg_color = "#00ff00"  # Green
+        fg_color = "#000000"
+        title_text = f"✓ CHECK-IN SUCCESSFUL"
+        detail_text = f"{name} (ID: {emp_id})\n{time_str.split(' ')[1]}"
+    else:  # checkout
+        bg_color = "#ff3333"  # Red
+        fg_color = "#ffffff"
+        title_text = f"✓ CHECK-OUT SUCCESSFUL"
+        detail_text = f"{name} (ID: {emp_id})\n{time_str.split(' ')[1]}\nWorking Hours: {hours}h"
+    
+    # Update notification appearance
+    notification_frame.config(bg=bg_color, highlightbackground=bg_color, highlightthickness=5)
+    notification_label.config(text=title_text, bg=bg_color, fg=fg_color)
+    notification_details.config(text=detail_text, bg=bg_color, fg=fg_color)
+    
+    # Load employee photo if exists
+    photo_path = os.path.join(conf["dataset_path"], conf["class"], emp_id)
+    if os.path.exists(photo_path):
+        images = [f for f in os.listdir(photo_path) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        if images:
+            img_path = os.path.join(photo_path, images[0])
+            try:
+                photo = Image.open(img_path)
+                photo = photo.resize((100, 100), Image.LANCZOS)
+                photo_tk = ImageTk.PhotoImage(photo)
+                notification_photo_label.config(image=photo_tk, bg=bg_color)
+                notification_photo_label.image = photo_tk
+            except:
+                notification_photo_label.config(image="", bg=bg_color)
+        else:
+            notification_photo_label.config(image="", bg=bg_color)
+    else:
+        notification_photo_label.config(image="", bg=bg_color)
+    
+    # Show notification
+    notification_frame.place(x=x, y=y, width=400, height=250)
+    
+    # Hide after 3 seconds
+    root.after(3000, lambda: notification_frame.place_forget())
 
 # Initialize variables
 prevPerson = None
@@ -306,9 +366,12 @@ def update_frame():
             
             # Only store attendance every 10 consecutive frames (reduce writes)
             if consecCount == 10:
-                attn_info = store_attendance(name, curPerson)
-                if attn_info:
+                result = store_attendance(name, curPerson)
+                if result:
+                    attn_info, action_type, emp_id, time_str, hours = result
                     attendance_label.config(text=f"{attn_info}")
+                    # Show notification
+                    show_notification(name, emp_id, action_type, time_str, hours)
                 # Reset counter to allow next check-out after some time
                 consecCount = 0
         else:
