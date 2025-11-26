@@ -227,7 +227,7 @@ def store_attendance(name, id):
 
 # Tkinter window setup
 root = tk.Tk()
-root.title("Employee Attendance Management System - Press 'S' to Start, 'Q' to Quit, 'F' for Fullscreen")
+root.title("Employee Attendance System")
 
 # Get screen dimensions
 screen_width = root.winfo_screenwidth()
@@ -245,33 +245,9 @@ root.configure(bg="#1a1a1a")
 # Fullscreen toggle variable
 is_fullscreen = False
 
-# Label to show keyboard shortcuts
-shortcut_label = tk.Label(root, 
-                          text="⌨️  Keyboard: [S] Start | [Q] Quit | [F] Fullscreen | [R] Reset", 
-                          font=("Arial", 12, "bold"), 
-                          fg="#00ff00",
-                          bg="#1a1a1a")
-shortcut_label.pack(pady=5)
-
-# Label to show attendance status
-attendance_label = tk.Label(root, 
-                           text="Status: Press 'S' to START recognition", 
-                           font=("Arial", 16, "bold"), 
-                           fg="#ffcc00",
-                           bg="#1a1a1a")
-attendance_label.pack(pady=5)
-
-# Info label for instructions
-info_label = tk.Label(root, 
-                     text="First detection = CHECK-IN | Every subsequent detection = CHECK-OUT (updates)", 
-                     font=("Arial", 11), 
-                     fg="#888888",
-                     bg="#1a1a1a")
-info_label.pack(pady=3)
-
-# Canvas to display video feed (larger size)
-canvas = tk.Canvas(root, width=video_width-40, height=video_height-40, bg="#000000", highlightthickness=0)
-canvas.pack(pady=10)
+# Canvas to display video feed (full window)
+canvas = tk.Canvas(root, width=video_width-20, height=window_height-20, bg="#000000", highlightthickness=0)
+canvas.pack(fill=tk.BOTH, expand=True)
 
 # Notification panel for check-in/check-out (initially hidden)
 notification_frame = tk.Frame(root, bg="#ffffff", relief="raised", borderwidth=3)
@@ -288,8 +264,8 @@ notification_photo_label.pack(pady=10)
 def show_notification(name, emp_id, action_type, time_str, hours=0):
     """Show check-in/check-out notification for 3 seconds"""
     # Position notification in center of canvas
-    x = (video_width - 400) // 2
-    y = (video_height - 200) // 2
+    x = (canvas.winfo_width() - 400) // 2
+    y = (canvas.winfo_height() - 250) // 2
     
     # Set colors based on action
     if action_type == "checkin":
@@ -392,7 +368,6 @@ def update_frame():
                 result = store_attendance(name, curPerson)
                 if result:
                     attn_info, action_type, emp_id, time_str, hours = result
-                    attendance_label.config(text=f"{attn_info}")
                     # Show notification
                     show_notification(name, emp_id, action_type, time_str, hours)
                 # Reset counter to allow next check-out after some time
@@ -433,14 +408,12 @@ def start_video():
     global video_running
     if not video_running:
         video_running = True
-        attendance_label.config(text="Status: RUNNING - Show face to CHECK-IN/CHECK-OUT", fg="#00ff00")
         update_frame()
 
 # Stop video function
 def stop_video():
     global video_running
     video_running = False
-    attendance_label.config(text="Status: STOPPED - Press 'S' to restart", fg="#ff6600")
 
 # Reset function
 def reset_status():
@@ -448,17 +421,12 @@ def reset_status():
     consecCount = 0
     prevPerson = None
     curPerson = None
-    attendance_label.config(text="Status: RESET - Recognition cleared", fg="#ffcc00")
 
 # Toggle fullscreen
 def toggle_fullscreen(event=None):
     global is_fullscreen
     is_fullscreen = not is_fullscreen
     root.attributes("-fullscreen", is_fullscreen)
-    if is_fullscreen:
-        shortcut_label.config(text="⌨️  FULLSCREEN MODE | Press 'F' or ESC to exit fullscreen")
-    else:
-        shortcut_label.config(text="⌨️  Keyboard: [S] Start | [Q] Quit | [F] Fullscreen | [R] Reset")
 
 # Exit program function
 def exit_program(event=None):
