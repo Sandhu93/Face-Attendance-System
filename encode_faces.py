@@ -18,6 +18,10 @@ def encode_faces():
 		# Grab image paths
 		imagePaths = list(paths.list_images(dataset_path))
 		total_images = len(imagePaths)
+		
+		print(f"[INFO] Dataset path: {dataset_path}")
+		print(f"[INFO] Found {total_images} images")
+		
 		if total_images == 0:
 			messagebox.showwarning("Warning", "No images found in the dataset path.")
 			return
@@ -25,6 +29,9 @@ def encode_faces():
 		# Initialize known encodings and names
 		knownEncodings = []
 		knownNames = []
+		
+		# Track unique names
+		unique_names = set()
 
 		# Update progress bar
 		progress_bar["maximum"] = total_images
@@ -37,6 +44,7 @@ def encode_faces():
 
 			# Extract the person name
 			name = imagePath.split(os.path.sep)[-2]
+			unique_names.add(name)
 			print(imagePath,name)
 
 			# Load and process the image
@@ -56,6 +64,10 @@ def encode_faces():
 
 		# Serialize encodings
 		data = {"encodings": knownEncodings, "names": knownNames}
+		
+		print(f"[INFO] Total encodings: {len(knownEncodings)}")
+		print(f"[INFO] Unique employees: {sorted(unique_names)}")
+		
 		with open(encodings_path, "wb") as f:
 			pickle.dump(data, f)
 

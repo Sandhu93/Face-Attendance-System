@@ -407,6 +407,7 @@ def update_frame():
 def start_video():
     global video_running
     if not video_running:
+        reload_models()  # Reload models to get latest training
         video_running = True
         update_frame()
 
@@ -421,6 +422,16 @@ def reset_status():
     consecCount = 0
     prevPerson = None
     curPerson = None
+
+def reload_models():
+    """Reload recognizer and label encoder from disk (after new training)"""
+    global recognizer, le
+    try:
+        recognizer = pickle.loads(open(conf["recognizer_path"], "rb").read())
+        le = pickle.loads(open(conf["le_path"], "rb").read())
+        print("Models reloaded successfully!")
+    except Exception as e:
+        print(f"Error reloading models: {e}")
 
 # Toggle fullscreen
 def toggle_fullscreen(event=None):
@@ -449,6 +460,8 @@ def on_key_press(event):
         toggle_fullscreen()
     elif key == 'r':
         reset_status()
+    elif key == 'm':  # Reload models after training
+        reload_models()
     elif key == 'p':  # Pause
         stop_video()
 
